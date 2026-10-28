@@ -8,7 +8,7 @@ As built, kept apart from the plan.
 | AA1 — the app on Workers | ✅ Shipped | [#2](https://github.com/sourceplane/ai-artifacts/pull/2) |
 | AA2 — the KV namespace | ✅ Shipped | [#3](https://github.com/sourceplane/ai-artifacts/pull/3) |
 | AA3 — ready to instantiate | ✅ Shipped | [#4](https://github.com/sourceplane/ai-artifacts/pull/4) |
-| AA4 — a baseline | not started | |
+| AA4 — a baseline | ✅ Shipped as `baseline-v1` | [#5](https://github.com/sourceplane/ai-artifacts/pull/5) |
 
 ## Departures from upstream (e2b-dev/fragments at `3b11c7f`)
 
@@ -31,5 +31,29 @@ As built, kept apart from the plan.
 | `next lint` with `next/core-web-vitals` | ESLint 9 with eslint-config-next 16; the rules it added after the template are off by name | The template is kept as written |
 | node:test with `tsx` | vitest in `tests/web`, with in-memory KV and AI bindings and no network | The reference test shape |
 
+## AA4 — the baseline, as built
+
+kv-redis-starter's machinery at its current main (the turso v8 / orun
+v2.88.0 shape: one secrets hook, tasks in the background, landings checked in
+the box, the manual-deploy contract in `ci.yml`), with:
+
+- the product's README and `AGENTS.md` (`.baseline/product/`), the context
+  pack, the phase cards with their budgets (6 + 1 minutes, estimates), and
+  generated docs for every component;
+- the blueprint's `ignore` keeping `.env.example` and `.dev.vars.example` in
+  the product (kv-redis-starter's `**/.dev.vars.*` would have dropped the
+  latter) — the leak and placement gates check both ship;
+- the deployment record probing `/api/health` instead of a rendered count,
+  and naming the optional keys;
+- placement asserting the eleven optional keys' refs, the smoke on
+  `/api/health`, and the build handing the keys to the product's own Worker
+  while stripping them from the bundle;
+- the e2e serving the built Worker with its `AI` binding on a Workers AI
+  stand-in (`testing/lib/fake-ai`, ai-chatbot's): the deploy's own smoke, a
+  fragment streamed with its JSON schema, the unkeyed vendor model refused,
+  the sandbox's notice, the KV rate limit, the short links; and an E2B key in
+  the build's environment proven absent from the bundle.
+
 Not proven offline: a real Workers AI model following the schema (AA-B), a
-real sandbox run (AA-A, beyond the spike), and the namespace's apply.
+real sandbox run (AA-A, beyond the spike), and the namespace's apply and the
+secrets push (AA-F).
