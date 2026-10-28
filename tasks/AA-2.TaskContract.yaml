@@ -1,0 +1,18 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: AA-2
+  title: "The app on Workers"
+spec:
+  goal: Fragments runs on Cloudflare Workers + Static Assets through @opennextjs/cloudflare, its default model Workers AI through the AI binding, its sandboxes on E2B, its rate limit and share links in the KV binding, with a per-environment rendered wrangler config and green checks
+  affects:
+    - apps/web
+    - tests/web
+    - pnpm-lock.yaml
+    - package.json
+    - turbo.json
+  doneWhen:
+    - pnpm wire:fixture, typecheck, lint, test and build are green
+    - the Worker's dry-run size fits Workers Free
+    - wrangler dev streams a fragment from the default model
+  gates: []

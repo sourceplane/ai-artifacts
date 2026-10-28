@@ -1,0 +1,15 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: AA-4
+  title: "Ready to instantiate"
+spec:
+  goal: The README says how to run, test, preview, connect E2B and model providers, and deploy, and the as-built status records every departure from upstream
+  affects:
+    - README.md
+    - apps/web/README.md
+    - specs/epics/ai-artifacts
+  doneWhen:
+    - the README covers running, testing, previewing, connecting and deploying
+    - IMPLEMENTATION-STATUS.md lists each swap
+  gates: []

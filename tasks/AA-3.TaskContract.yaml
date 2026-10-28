@@ -1,0 +1,14 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: AA-3
+  title: "The KV namespace from Terraform"
+spec:
+  goal: infra/terraform/cloudflare-kv provisions the stage and prod namespaces and publishes the wiring document the app's build renders from; the app's deploy waits for the apply
+  affects:
+    - infra/terraform/cloudflare-kv
+    - apps/web/component.yaml
+  doneWhen:
+    - terraform validate passes
+    - the product's push-to-main plan applies cloudflare-kv before deploying web
+  gates: []

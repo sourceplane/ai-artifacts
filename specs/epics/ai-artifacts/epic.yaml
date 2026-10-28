@@ -1,0 +1,39 @@
+# The epic's declaration. metadata.name equals the directory name; metadata.key
+# is the task-key prefix this epic reserves (AA → AA-1, AA-2, …). Owner, target
+# date and health are the platform's — never written here.
+apiVersion: orun.io/v1
+kind: Epic
+metadata:
+  name: ai-artifacts
+  key: AA
+spec:
+  title: "E2B's Fragments on one Cloudflare Worker, Workers AI its keyless default model"
+  summary: "Fragments (e2b-dev/fragments, Apache-2.0) — describe an app or an analysis, and a model writes it as a fragment (code, its stack and its dependencies) that E2B runs in a cloud sandbox: a Python cell's output and charts, or a live Next.js, Vue, Streamlit or Gradio preview — runs as ONE Cloudflare Worker built by @opennextjs/cloudflare. The models default to Workers AI through the Worker's own AI binding, so a fresh deployment writes code with nothing configured; the vendor models upstream offers stay, each shown once its key is stored. E2B's API key is an optional Orun secret: without it the code is written and shown, and the page says what running it needs. Upstash rate limiting and the Vercel KV share links become a Workers KV namespace Terraform provisions per environment through Orun."
+  state: started
+  milestones:
+    - name: "AA0 — the spec"
+      exitCriteria:
+        - "intent, CI, the shared tooling, the spec index, this doc set and the task contracts are on main"
+      tasks: [AA-1]
+    - name: "AA1 — the app on Workers"
+      exitCriteria:
+        - "apps/web is the upstream app on Next.js 16 and @opennextjs/cloudflare, its sandbox route calling E2B from the Worker"
+        - "the default model is Workers AI through the AI binding (workers-ai-provider); vendor models appear only with their keys"
+        - "the rate limit and the share links read and write the KV binding; the wrangler config renders per environment from the cloudflare-kv root's wiring document (fixture in verify, live in deploy)"
+        - "`pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` are green and the Worker fits Workers Free"
+      tasks: [AA-2]
+    - name: "AA2 — the KV namespace from Terraform"
+      exitCriteria:
+        - "infra/terraform/cloudflare-kv provisions the stage and prod namespaces and publishes the wiring document the app renders from"
+      tasks: [AA-3]
+    - name: "AA3 — ready to instantiate"
+      exitCriteria:
+        - "the README says how to run, test, preview, connect E2B and a model provider, and deploy it"
+        - "the as-built status records every departure from the upstream template"
+      tasks: [AA-4]
+    - name: "AA4 — a baseline, in one landing"
+      exitCriteria:
+        - "blueprint.yaml (the console card) and repo-blueprint.yaml (the build) take a new app generator from nothing to live on stage and prod in ONE landing (01-product) and a hook-only record (02-docs)"
+        - "the product's push-to-main plan applies cloudflare-kv, then deploys web, per environment"
+        - "Baseline CI is green: contract tests, the blueprint read by the pinned orun, the leak gate, the offline bootstrap and the end-to-end tier (a fragment streamed from a Workers AI stand-in under wrangler dev)"
+      tasks: [AA-5]
