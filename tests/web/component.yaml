@@ -1,0 +1,23 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+metadata:
+  name: web-tests
+  description: The app's vitest suite (the models with the Workers AI default, the chat and sandbox routes, the KV rate limit and share links against in-memory bindings), run on every pull request
+spec:
+  type: turbo-package
+  lifecycle: production
+  owner: platform
+  domain: tests
+  subscribe:
+    environments:
+      - name: dev
+        profile: quick-check
+  parameters:
+    nodeVersion: "22"
+    pnpmVersion: "10.12.1"
+    buildCommand: pnpm exec turbo run build --filter=./
+    typecheckCommand: pnpm exec turbo run typecheck --filter=./
+    preBuildCommand: pnpm exec turbo run test --filter=./
+  labels:
+    team: platform
+    layer: test

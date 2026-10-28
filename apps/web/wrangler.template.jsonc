@@ -1,0 +1,42 @@
+// The source of wrangler.jsonc, which tooling/wire renders from it: from
+// wiring.fixture.json for local work (`pnpm run wire:fixture`, committed as
+// that render, because the deploy lane checks the config exists before it
+// builds), and on every Orun lane from the wiring document the
+// `cloudflare-kv` Terraform root lease-publishes (WIRING_CLOUDFLARE_KV_<ENV>)
+// — dev, which no root applies to, from the fixture (component.yaml's
+// buildCommand). Edit this file, never wrangler.jsonc. The workers-assets
+// composition deploys one environment per job with no wrangler `--env`, so
+// `__ENV__` names the environment this is rendered for.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ai-artifacts-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  // The rate-limit windows and the published previews' short links — Workers
+  // KV in place of upstream's Upstash and Vercel KV (lib/ratelimit.ts,
+  // lib/links.ts).
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "@@wiring(cloudflare-kv/__ENV__:app_kv_id)@@"
+    }
+  ],
+  // The model provider. Workers AI through this binding is the default
+  // (lib/models.ts): it needs no key — the Worker's own account runs the
+  // models. Workers AI has no local mode, so `wrangler dev` and `next dev`
+  // reach it remotely (`wrangler login` first).
+  "ai": {
+    "binding": "AI"
+  }
+  // E2B_API_KEY, MORPH_API_KEY and the vendor model keys (OPENAI_API_KEY,
+  // ANTHROPIC_API_KEY, …) are optional Worker secrets, never vars: the deploy
+  // lane sets the ones the environment has (tooling/wire/worker-secrets.mjs).
+  // Without E2B_API_KEY fragments are written and shown but not run; without
+  // a vendor key only the Workers AI models answer with the server's account.
+}

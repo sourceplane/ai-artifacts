@@ -1,0 +1,36 @@
+// GENERATED from wrangler.template.jsonc by tooling/wire — edit the
+// template, not this file. The committed copy is the fixture render
+// (`pnpm run wire:fixture`); every Orun lane renders its own environment.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ai-artifacts-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  // The rate-limit windows and the published previews' short links — Workers
+  // KV in place of upstream's Upstash and Vercel KV (lib/ratelimit.ts,
+  // lib/links.ts).
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "00000000000000000000000000000001"
+    }
+  ],
+  // The model provider. Workers AI through this binding is the default
+  // (lib/models.ts): it needs no key — the Worker's own account runs the
+  // models. Workers AI has no local mode, so `wrangler dev` and `next dev`
+  // reach it remotely (`wrangler login` first).
+  "ai": {
+    "binding": "AI"
+  }
+  // E2B_API_KEY, MORPH_API_KEY and the vendor model keys (OPENAI_API_KEY,
+  // ANTHROPIC_API_KEY, …) are optional Worker secrets, never vars: the deploy
+  // lane sets the ones the environment has (tooling/wire/worker-secrets.mjs).
+  // Without E2B_API_KEY fragments are written and shown but not run; without
+  // a vendor key only the Workers AI models answer with the server's account.
+}

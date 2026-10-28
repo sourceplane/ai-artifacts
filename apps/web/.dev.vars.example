@@ -1,0 +1,25 @@
+# Copy to .dev.vars for `wrangler dev` / `pnpm preview` (never committed).
+# Every key is OPTIONAL: without them the app writes fragments with Workers AI
+# (the AI binding, no key) and says E2B is not connected.
+
+# Runs fragments in E2B sandboxes — https://e2b.dev/dashboard?tab=keys
+E2B_API_KEY=
+
+# Morph's apply-edit mode (the settings toggle)
+MORPH_API_KEY=
+
+# Vendor models, sent with the server's key when the visitor gives none
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+GOOGLE_GENERATIVE_AI_API_KEY=
+MISTRAL_API_KEY=
+GROQ_API_KEY=
+TOGETHER_API_KEY=
+FIREWORKS_API_KEY=
+XAI_API_KEY=
+DEEPSEEK_API_KEY=
+
+# Upstream's rate limit for requests sent with the server's keys (and every
+# Workers AI request): 10 per day per IP unless set.
+# RATE_LIMIT_MAX_REQUESTS=10
+# RATE_LIMIT_WINDOW=1d

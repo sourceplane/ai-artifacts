@@ -1,0 +1,122 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+metadata:
+  name: web
+  description: E2B's Fragments app generator (Next.js on Cloudflare Workers + Static Assets via @opennextjs/cloudflare, Workers AI its default model, per environment)
+spec:
+  type: cloudflare-workers-assets-turbo
+  lifecycle: production
+  owner: platform
+  # `app`, not `web`: a domain and a component share one name space in the
+  # catalog, and a domain called `web` would hide this component from it.
+  domain: app
+  path: apps/web
+  # Its own lane per environment: the Next.js build is the longest job in the
+  # plan, and a shared lane would wait on it.
+  lane: isolated
+  # INFRA BEFORE APP. The Worker binds the KV namespace by id, rendered into
+  # its config during the build from the wiring document the cloudflare-kv
+  # root lease-publishes after its apply. A job resolves its secrets when it
+  # STARTS, so on a merge to main this deploy waits for that environment's
+  # apply (enforced) and the document is there. A pull request deploys
+  # nothing, so nothing on one waits (advisory).
+  dependsOn:
+    - component: cloudflare-kv
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+  secretEnv:
+    WIRING_CLOUDFLARE_KV_STAGE: "secret://ai-artifacts/ai-artifacts/stage/WIRING_CLOUDFLARE_KV"
+    WIRING_CLOUDFLARE_KV_PROD: "secret://ai-artifacts/ai-artifacts/prod/WIRING_CLOUDFLARE_KV"
+  # E2B's API key (running a fragment), Morph's (the apply-edit mode) and the
+  # vendor model keys, stored per environment as the product's secrets
+  # (README → Connecting E2B, Connecting a model provider). The Worker reads
+  # them at request time, so the build hands each one that is set to the
+  # Worker as a Worker SECRET and no bundle contains it (buildCommand below).
+  # BEST-EFFORT, wire-now-seed-later: a key nobody has stored yet is skipped
+  # when the job resolves its secrets (no env var, no failure), and the app
+  # without it still writes fragments with Workers AI — so a fresh product
+  # deploys and serves before its owner has an E2B account at all.
+  optionalSecretEnv:
+    E2B_API_KEY: "secret://ai-artifacts/ai-artifacts/{{ .environment }}/E2B_API_KEY"
+    MORPH_API_KEY: "secret://ai-artifacts/ai-artifacts/{{ .environment }}/MORPH_API_KEY"
+    OPENAI_API_KEY: "secret://ai-artifacts/ai-artifacts/{{ .environment }}/OPENAI_API_KEY"
+    ANTHROPIC_API_KEY: "secret://ai-artifacts/ai-artifacts/{{ .environment }}/ANTHROPIC_API_KEY"
+    GOOGLE_GENERATIVE_AI_API_KEY: "secret://ai-artifacts/ai-artifacts/{{ .environment }}/GOOGLE_GENERATIVE_AI_API_KEY"
+    MISTRAL_API_KEY: "secret://ai-artifacts/ai-artifacts/{{ .environment }}/MISTRAL_API_KEY"
+    GROQ_API_KEY: "secret://ai-artifacts/ai-artifacts/{{ .environment }}/GROQ_API_KEY"
+    TOGETHER_API_KEY: "secret://ai-artifacts/ai-artifacts/{{ .environment }}/TOGETHER_API_KEY"
+    FIREWORKS_API_KEY: "secret://ai-artifacts/ai-artifacts/{{ .environment }}/FIREWORKS_API_KEY"
+    XAI_API_KEY: "secret://ai-artifacts/ai-artifacts/{{ .environment }}/XAI_API_KEY"
+    DEEPSEEK_API_KEY: "secret://ai-artifacts/ai-artifacts/{{ .environment }}/DEEPSEEK_API_KEY"
+  subscribe:
+    environments:
+      - name: dev
+        profile: verify
+      - name: stage
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+      - name: prod
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+  parameters:
+    nodeVersion: "22"
+    pnpmVersion: "10.12.1"
+
+    workspaceDir: ../..
+    appDir: .
+
+    turboFilter: "@app/web"
+    wranglerConfig: wrangler.jsonc
+
+    # @opennextjs/cloudflare emits a Worker entrypoint plus a static-assets
+    # directory bound via ASSETS — both deploy in one `wrangler deploy`.
+    workerEntrypoint: .open-next/worker.js
+    assetsDir: .open-next/assets
+
+    # Per-env worker name: ai-artifacts-web-{dev,stage,prod}.
+    workerName: ai-artifacts-web
+    environmentAwareWorkerName: true
+
+    # The account's workers.dev subdomain; exported to the smoke step as
+    # ${WORKERS_DEV_SUBDOMAIN} and used to build ${DEPLOYED_URL}.
+    workersDevSubdomain: your-workers-subdomain
+
+    installCommand: pnpm install --frozen-lockfile
+    # Render this environment's wrangler config, then build. stage and prod
+    # render from the wiring document their cloudflare-kv apply published
+    # (secretEnv above, resolved before the job's first step); dev, which no
+    # root applies to and which only verifies, renders from the committed
+    # fixture. The committed wrangler.jsonc (the fixture render) is what the
+    # composition's verify-app-structure step finds before this runs.
+    #
+    # No key reaches the build (`env -u`): the Worker reads them at request
+    # time, so neither a bundle nor the bundler's cache holds one. Then each
+    # key the environment has goes to the Worker as a SECRET
+    # (tooling/wire/worker-secrets.mjs: `wrangler secret bulk`, the values
+    # over stdin) before the composition deploys it. Only the deploy lane
+    # holds a Cloudflare credential, so a verify lane builds the same and
+    # pushes nothing.
+    buildCommand: node ../../tooling/wire/live.mjs --template wrangler.template.jsonc --out wrangler.jsonc --components cloudflare-kv --env "${ORUN_ENVIRONMENT}" --fixture wiring.fixture.json --fixture-envs dev && env -u E2B_API_KEY -u MORPH_API_KEY -u OPENAI_API_KEY -u ANTHROPIC_API_KEY -u GOOGLE_GENERATIVE_AI_API_KEY -u MISTRAL_API_KEY -u GROQ_API_KEY -u TOGETHER_API_KEY -u FIREWORKS_API_KEY -u XAI_API_KEY -u DEEPSEEK_API_KEY pnpm exec turbo run build --filter=@app/web && node ../../tooling/wire/worker-secrets.mjs --secret E2B_API_KEY --secret MORPH_API_KEY --secret OPENAI_API_KEY --secret ANTHROPIC_API_KEY --secret GOOGLE_GENERATIVE_AI_API_KEY --secret MISTRAL_API_KEY --secret GROQ_API_KEY --secret TOGETHER_API_KEY --secret FIREWORKS_API_KEY --secret XAI_API_KEY --secret DEEPSEEK_API_KEY --worker "ai-artifacts-web-${ORUN_ENVIRONMENT}" --config wrangler.jsonc
+
+    # Smoke: the page renders to its end (`</html>` — a render that throws
+    # partway through a streamed page still sent a 200), and /api/health
+    # answers ok — which only the Worker can, by reading its KV namespace and
+    # finding its AI binding, so it proves the namespace bound and the Worker
+    # serving, whether or not E2B or a vendor key is connected. Read-only: a
+    # smoke on every deploy writes nothing and calls no model. Each response
+    # is buffered before grep so an early match cannot SIGPIPE curl.
+    smokeCommand: "html=$(curl -sfL \"${DEPLOYED_URL}/\") && echo \"${html}\" | grep -q '</html>' && health=$(curl -sf \"${DEPLOYED_URL}/api/health\") && echo \"${health}\" | grep -q '\"ok\":true'"
+  labels:
+    team: platform
+    layer: delivery
+    surface: web
+    runtime: cloudflare
