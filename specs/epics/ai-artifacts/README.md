@@ -8,7 +8,7 @@ The port keeps the chat, the five stacks (Python data analyst, Next.js, Vue, Str
 
 | Field | Value |
 |-------|-------|
-| Status | AA0 in progress |
+| Status | AA0–AA3 shipped (#1–#4); AA4 in progress |
 | Cluster | **AA** (AA0–AA4) |
 | Owner(s) | `apps/web` (the page, the chat, sandbox and publish routes, `lib/`) · `tests/web` · `infra/terraform/cloudflare-kv` |
 | Builds on | `ai-chatbot` (Workers AI through the `AI` binding with `workers-ai-provider`, vendor models behind their keys, the AI stand-in in the e2e), `kv-redis-starter` (the `cloudflare-kv` root and the wiring render), `ai-emoji-generator` (optional Orun secrets pushed as Worker secrets) |
